@@ -5,11 +5,10 @@ import static org.assertj.core.api.Assertions.assertThat;
 import com.querydsl.jpa.impl.JPAQueryFactory;
 import javax.persistence.EntityManager;
 import javax.persistence.PersistenceContext;
-import me.hjhng125.querydsl.entity.Hello;
-import me.hjhng125.querydsl.entity.QHello;
+import me.hjhng125.querydsl.hello.Hello;
+import me.hjhng125.querydsl.hello.QHello;
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.test.annotation.Commit;
 import org.springframework.transaction.annotation.Transactional;
 
 @SpringBootTest
