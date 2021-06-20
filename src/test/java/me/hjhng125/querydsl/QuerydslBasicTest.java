@@ -1,12 +1,12 @@
 package me.hjhng125.querydsl;
 
+import static me.hjhng125.querydsl.member.QMember.*;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import com.querydsl.jpa.impl.JPAQueryFactory;
 import javax.persistence.EntityManager;
 import javax.persistence.PersistenceContext;
 import me.hjhng125.querydsl.member.Member;
-import me.hjhng125.querydsl.member.QMember;
 import me.hjhng125.querydsl.team.Team;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -67,14 +67,12 @@ class QuerydslBasicTest {
     void startQuerydsl() {
         // member1찾기
 
-        QMember qMember = QMember.member;
-
-        Member member = queryFactory
-            .selectFrom(qMember)
-            .where(qMember.username.eq("member1")) // 파라미터 바인딩을 하지 않았지만 jdbc에 있는 preparedStatement로 자동으로 파라미터 바인딩함.
+        Member findByUsername = queryFactory
+            .selectFrom(member)
+            .where(member.username.eq("member1")) // 파라미터 바인딩을 하지 않았지만 jdbc에 있는 preparedStatement로 자동으로 파라미터 바인딩함.
             .fetchOne();
 
-        assertThat(member.getUsername()).isEqualTo("member1");
+        assertThat(findByUsername.getUsername()).isEqualTo("member1");
 
     }
 }
