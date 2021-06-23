@@ -4,6 +4,7 @@ import static me.hjhng125.querydsl.member.QMember.member;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import com.querydsl.core.QueryResults;
+import com.querydsl.jpa.impl.JPAQuery;
 import com.querydsl.jpa.impl.JPAQueryFactory;
 import java.util.List;
 import javax.persistence.EntityManager;
@@ -139,7 +140,30 @@ class QuerydslBasicTest {
         long count = queryFactory
             .selectFrom(member)
             .fetchCount();
+    }
 
+    /**
+     * 회원 정렬 순서
+     * 1. 회원 나이 내림차순
+     * 2. 회원 이름 올림차순
+     * 회원 이름이 없으면 마지막에 출력(nullsLast)
+     * */
+    @Test
+    void sort() {
+        em.persist(new Member(null, 100));
+        em.persist(new Member("member5", 100));
+        em.persist(new Member("member6", 100));
 
+        List<Member> ageDesc = queryFactory
+            .selectFrom(member)
+            .where(member.age.eq(100))
+            .orderBy(member.age.desc(), member.username.desc().nullsLast())
+            .fetch();
+
+        ageDesc.forEach(System.out::println);
+
+        assertThat(ageDesc.get(0).getUsername()).isEqualTo("member5");
+        assertThat(ageDesc.get(1).getUsername()).isEqualTo("member6");
+        assertThat(ageDesc.get(2).getUsername()).isEqualTo(null);
     }
 }
