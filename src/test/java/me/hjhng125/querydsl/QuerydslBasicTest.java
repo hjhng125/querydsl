@@ -7,6 +7,7 @@ import com.querydsl.jpa.impl.JPAQueryFactory;
 import javax.persistence.EntityManager;
 import javax.persistence.PersistenceContext;
 import me.hjhng125.querydsl.member.Member;
+import me.hjhng125.querydsl.member.QMember;
 import me.hjhng125.querydsl.team.Team;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -25,9 +26,9 @@ class QuerydslBasicTest {
     @BeforeEach
     void beforeEach() {
         queryFactory = new JPAQueryFactory(em); // entityManager를 가지고 데이터를 찾기 위해 필요함
-                                                // 동시성 문제 x - 멀티쓰레드 환경에 Thread safe 하다.
-                                                // 동시에 EntityManager에 접근해도 동시성 문제가 없다.
-                                                // 스프링에서 주입해주는 EntityManager 자체가 이미 Thread safe 하다.
+        // 동시성 문제 x - 멀티쓰레드 환경에 Thread safe 하다.
+        // 동시에 EntityManager에 접근해도 동시성 문제가 없다.
+        // 스프링에서 주입해주는 EntityManager 자체가 이미 Thread safe 하다.
 
         Team teamA = new Team("teamA");
         Team teamB = new Team("teamB");
@@ -74,5 +75,35 @@ class QuerydslBasicTest {
 
         assertThat(findByUsername.getUsername()).isEqualTo("member1");
 
+    }
+
+    @Test
+    void search() {
+        Member findMember = queryFactory
+            .selectFrom(member)
+            .where(member.username.eq("member1")
+                .and(member.age.eq(10)))
+            .fetchOne();
+
+        assertThat(findMember.getUsername()).isEqualTo("member1");
+        assertThat(findMember.getAge()).isEqualTo(10);
+    }
+
+    @Test
+    void searchAndParam() {
+        Member findMember = queryFactory
+            .selectFrom(member)
+            .where(
+                member.username.eq("member1"),
+                member.age.eq(10)
+                // 이 경우와 같이 and()체인이 아닌 and 조건을 ','로 조립할 수 있다.
+                // where()는 파라미터를 Predicate... 로 받기 때문에 가능하다.
+                // 이런식으로 할 경우 null이 파라미터로 들어왔을 때 무시할 수 있다.
+                // null을 무시함으로써 더욱 직관적인 동적쿼리를 만들 수 있다.
+            )
+            .fetchOne();
+
+        assertThat(findMember.getUsername()).isEqualTo("member1");
+        assertThat(findMember.getAge()).isEqualTo(10);
     }
 }
