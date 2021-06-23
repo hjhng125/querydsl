@@ -1,13 +1,14 @@
 package me.hjhng125.querydsl;
 
-import static me.hjhng125.querydsl.member.QMember.*;
+import static me.hjhng125.querydsl.member.QMember.member;
 import static org.assertj.core.api.Assertions.assertThat;
 
+import com.querydsl.core.QueryResults;
 import com.querydsl.jpa.impl.JPAQueryFactory;
+import java.util.List;
 import javax.persistence.EntityManager;
 import javax.persistence.PersistenceContext;
 import me.hjhng125.querydsl.member.Member;
-import me.hjhng125.querydsl.member.QMember;
 import me.hjhng125.querydsl.team.Team;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -105,5 +106,40 @@ class QuerydslBasicTest {
 
         assertThat(findMember.getUsername()).isEqualTo("member1");
         assertThat(findMember.getAge()).isEqualTo(10);
+    }
+
+    @Test
+    void resultFetch() {
+        List<Member> fetch = queryFactory
+            .selectFrom(member)
+            .fetch();
+
+        Member fetchOne = queryFactory
+            .selectFrom(member)
+            .where(member.age.eq(10))
+            .fetchOne();
+
+        // 아래 두 쿼리는 같다.
+        Member fetchLimitOne = queryFactory
+            .selectFrom(member)
+            .limit(1)
+            .fetchFirst();
+
+        Member fetchFirst = queryFactory
+            .selectFrom(member)
+            .fetchFirst();
+
+        // paging 정보를 제공한다.
+        QueryResults<Member> fetchResults = queryFactory
+            .selectFrom(member)
+            .fetchResults();
+        long total = fetchResults.getTotal();
+        List<Member> results = fetchResults.getResults();
+
+        long count = queryFactory
+            .selectFrom(member)
+            .fetchCount();
+
+
     }
 }
