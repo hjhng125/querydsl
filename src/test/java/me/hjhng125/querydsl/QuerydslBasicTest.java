@@ -7,6 +7,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 import com.querydsl.core.QueryResults;
 import com.querydsl.core.Tuple;
+import com.querydsl.core.types.dsl.CaseBuilder;
 import com.querydsl.jpa.impl.JPAQueryFactory;
 import java.util.List;
 import javax.persistence.EntityManager;
@@ -472,23 +473,48 @@ class QuerydslBasicTest {
     }
 
     /**
-     * JPA JPQL의 서브쿼리는 from절에서의 서브쿼리가 불가능하다.
-     * querydsl은 JPQL의 빌더 역할이기 떄문에 JPQL이 지원하지 않으면 할 수 없다.
-     * select, where 절에서의 서브쿼리는 Hibernate가 지원하고,
-     * querydsl도 Hibernate를 사용하기 떄문에 가능한 것이다.
-     *
-     * * 해결방안
-     * 1. 서브쿼리를 join으로 변경한다. (가능한 경우)
-     * 2. 애플리케이션에서 쿼리를 2번 분리해서 실행한다.
-     *      * 성능이 중요하지 않은 경우
-     *      * 심각한 성능 저하를 발생하지 않는 경우
-     * 3. 위의 사례를 만족하지 못한 경우 nativeSQL을 사용한다.
-     *
-     * * from절의 서브쿼리를 사용하는 안 좋은 경우 - 한 쿼리가 많은 기능을 지원하는 경우
-     *      * 화면에 렌더링할 데이터 포맷을 맞추는 경우
-     *      * 비즈니스 로직이 포함된 경우
-     * * sql은 데이터를 가져오는 역할만 해야하고 집중해야 한다.
-     * * 로직은 필요한 layer 에서 해결해야 한다.
-     * * SQL AntiPatterns
-    */
+     * JPA JPQL의 서브쿼리는 from절에서의 서브쿼리가 불가능하다. querydsl은 JPQL의 빌더 역할이기 떄문에 JPQL이 지원하지 않으면 할 수 없다. select, where 절에서의 서브쿼리는 Hibernate가 지원하고, querydsl도 Hibernate를 사용하기 떄문에 가능한 것이다.
+     * <p>
+     * * 해결방안 1. 서브쿼리를 join으로 변경한다. (가능한 경우) 2. 애플리케이션에서 쿼리를 2번 분리해서 실행한다. * 성능이 중요하지 않은 경우 * 심각한 성능 저하를 발생하지 않는 경우 3. 위의 사례를 만족하지 못한 경우 nativeSQL을 사용한다.
+     * <p>
+     * * from절의 서브쿼리를 사용하는 안 좋은 경우 - 한 쿼리가 많은 기능을 지원하는 경우 * 화면에 렌더링할 데이터 포맷을 맞추는 경우 * 비즈니스 로직이 포함된 경우 * sql은 데이터를 가져오는 역할만 해야하고 집중해야 한다. * 로직은 필요한 layer 에서 해결해야 한다. * SQL
+     * AntiPatterns
+     */
+
+    @Test
+    void simple_case() {
+        //given
+
+        //when
+        List<String> result = queryFactory
+            .select(member.age
+                .when(10).then("열살")
+                .when(20).then("스무살")
+                .otherwise("기타"))
+            .from(member)
+            .fetch();
+
+        //then
+        result.forEach(System.out::println);
+    }
+
+    @Test
+    void complex_case() {
+        //given
+
+        //when
+        List<String> result = queryFactory
+            .select(
+                new CaseBuilder()
+                    .when(member.age.between(0, 20)).then("0 ~ 20살")
+                    .when(member.age.between(21, 30)).then("21 ~ 30살")
+                    .otherwise("기타")
+            )
+            .from(member)
+            .fetch();
+
+        //then
+        result.forEach(System.out::println);
+
+    }
 }
