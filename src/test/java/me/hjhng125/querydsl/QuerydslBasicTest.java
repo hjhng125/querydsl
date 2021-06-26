@@ -1,5 +1,6 @@
 package me.hjhng125.querydsl;
 
+import static com.querydsl.jpa.JPAExpressions.select;
 import static me.hjhng125.querydsl.member.QMember.member;
 import static me.hjhng125.querydsl.team.QTeam.team;
 import static org.assertj.core.api.Assertions.assertThat;
@@ -28,9 +29,11 @@ class QuerydslBasicTest {
     EntityManager em;
 
     JPAQueryFactory queryFactory;
+    QMember memberSub;
 
     @BeforeEach
     void beforeEach() {
+        memberSub = new QMember("memberSub");
         queryFactory = new JPAQueryFactory(em); // entityManager를 가지고 데이터를 찾기 위해 필요함
         // 동시성 문제 x - 멀티쓰레드 환경에 Thread safe 하다.
         // 동시에 EntityManager에 접근해도 동시성 문제가 없다.
@@ -147,11 +150,8 @@ class QuerydslBasicTest {
     }
 
     /**
-     * 회원 정렬 순서
-     * 1. 회원 나이 내림차순
-     * 2. 회원 이름 올림차순
-     * 회원 이름이 없으면 마지막에 출력(nullsLast)
-     * */
+     * 회원 정렬 순서 1. 회원 나이 내림차순 2. 회원 이름 올림차순 회원 이름이 없으면 마지막에 출력(nullsLast)
+     */
     @Test
     void sort() {
         em.persist(new Member(null, 100));
@@ -222,7 +222,7 @@ class QuerydslBasicTest {
 
     /**
      * 팀의 이름과 각 팀의 연령을 구하기
-     * */
+     */
     @Test
     void group() {
         //given
@@ -256,7 +256,7 @@ class QuerydslBasicTest {
             .where(team.name.eq("teamA"))
             .fetch();
 
-       //then
+        //then
         assertThat(teamA)
             .extracting("username")
             .containsExactly("member1", "member2");
@@ -264,9 +264,7 @@ class QuerydslBasicTest {
     }
 
     /**
-     * theta join : 연관관계가 없지만 조인해줌
-     * 조인을 하려하는 양 쪽 테이블의 모든 데이터를 가져와서 조인하고 where 절에서 필터링.
-     * 회원의 이름이 팀 이름과 같은 회원을 조회
+     * theta join : 연관관계가 없지만 조인해줌 조인을 하려하는 양 쪽 테이블의 모든 데이터를 가져와서 조인하고 where 절에서 필터링. 회원의 이름이 팀 이름과 같은 회원을 조회
      */
 
     @Test
@@ -285,7 +283,7 @@ class QuerydslBasicTest {
 
         //then
         assertThat(eqName)
-            .extracting("username")
+            .extracting("username") // iterable한 요소에서 특정 field나 property 추출
             .containsExactly("teamA", "teamB");
     }
 
@@ -294,13 +292,10 @@ class QuerydslBasicTest {
      * JPA 2.1부터 지원
      * 1.조인 대상을 필터링
      * 2. 연관관계 없는 엔터티 외부 조인
-    */
+     */
 
     /**
-     * 회원과 팀을 조인
-     * 팀 이름이 teamA
-     * 회원은 모두 조회
-     * JPQL : select m, t from Member m left join m.team t on t.name = 'teamA'
+     * 회원과 팀을 조인 팀 이름이 teamA 회원은 모두 조회 JPQL : select m, t from Member m left join m.team t on t.name = 'teamA'
      */
     @Test
     void join_on_filtering() {
@@ -324,8 +319,7 @@ class QuerydslBasicTest {
     }
 
     /**
-     * 연관관계가 없는 테이블 조인
-     * 팀이름과 회원이름이 같은 회원 외부 조인으로 조회
+     * 연관관계가 없는 테이블 조인 팀이름과 회원이름이 같은 회원 외부 조인으로 조회
      */
     @Test
     void join_on_no_relation() {
@@ -349,13 +343,11 @@ class QuerydslBasicTest {
     }
 
     /**
-     * fetch join
-     * sql이 지원하는 기능은 아니고, sql 조인을 활용하여 연관된 엔터티를 sql 쿼리 한번으로 가져오는 방법
-     * 주로 JPQL 성능 최적화에서 사용됨.
+     * fetch join sql이 지원하는 기능은 아니고, sql 조인을 활용하여 연관된 엔터티를 sql 쿼리 한번으로 가져오는 방법 주로 JPQL 성능 최적화에서 사용됨.
      */
 
     @PersistenceUnit // entity manager를 만드는 factory를 주입받기 위한 어노테이션
-    EntityManagerFactory emf;
+        EntityManagerFactory emf;
 
     @Test
     void noFetchJoin() {
@@ -376,9 +368,7 @@ class QuerydslBasicTest {
     }
 
     /**
-     * fetchType.Eager와 fetch join은 같은 쿼리를 발생시킨다.
-     * fetchType을 Eager로 설정하면 해당 연관관계에서 발생하는 모든 쿼리에서 join을 통해 가져오므로
-     * 특정 상황에서만 한번에 데이터를 가져오고 싶은 경우 fetch join을 사용하면 될 듯하다.
+     * fetchType.Eager와 fetch join은 같은 쿼리를 발생시킨다. fetchType을 Eager로 설정하면 해당 연관관계에서 발생하는 모든 쿼리에서 join을 통해 가져오므로 특정 상황에서만 한번에 데이터를 가져오고 싶은 경우 fetch join을 사용하면 될 듯하다.
      */
     @Test
     void fetchJoin() {
@@ -398,4 +388,107 @@ class QuerydslBasicTest {
         assertThat(loaded).as("패치 조인 미적용").isTrue();
 
     }
+
+    /**
+     * SubQuery
+     * com.querydsl.jpa.JPAExpressions 사용
+     */
+
+    /**
+     * 나이가 가장 많은 회원 조회
+     */
+    @Test
+    void subQuery() {
+        //given
+
+        //when
+        Member result = queryFactory
+            .selectFrom(member)
+            .where(member.age.eq(
+                select(memberSub.age.max())
+                    .from(memberSub)
+            ))
+            .fetchOne();
+        //then
+        assertThat(result.getAge()).isEqualTo(40);
+
+    }
+
+    /**
+     * 나이가 평균 이상
+     */
+    @Test
+    void subQuery_age_goe_avg() {
+        //given
+
+        //when
+        List<Member> result = queryFactory
+            .selectFrom(member)
+            .where(member.age.goe(
+                select(memberSub.age.avg())
+                    .from(memberSub)
+            ))
+            .fetch();
+
+        //then
+        assertThat(result).extracting("age")
+            .containsExactly(30, 40);
+    }
+
+    @Test
+    void subQuery_in() {
+        //given
+
+        //when
+        List<Member> result = queryFactory
+            .selectFrom(member)
+            .where(member.age.in(
+                select(memberSub.age)
+                    .from(memberSub)
+                    .where(memberSub.age.gt(10))
+            ))
+            .fetch();
+
+        //then
+        assertThat(result).extracting("age")
+            .containsExactly(20, 30, 40);
+
+    }
+
+    @Test
+    void select_subQuery() {
+        //given
+
+        //when
+        List<Tuple> result = queryFactory
+            .select(member.username,
+                select(memberSub.age.avg())
+                    .from(memberSub))
+            .from(member)
+            .fetch();
+
+        //then
+        result.forEach(System.out::println);
+    }
+
+    /**
+     * JPA JPQL의 서브쿼리는 from절에서의 서브쿼리가 불가능하다.
+     * querydsl은 JPQL의 빌더 역할이기 떄문에 JPQL이 지원하지 않으면 할 수 없다.
+     * select, where 절에서의 서브쿼리는 Hibernate가 지원하고,
+     * querydsl도 Hibernate를 사용하기 떄문에 가능한 것이다.
+     *
+     * * 해결방안
+     * 1. 서브쿼리를 join으로 변경한다. (가능한 경우)
+     * 2. 애플리케이션에서 쿼리를 2번 분리해서 실행한다.
+     *      * 성능이 중요하지 않은 경우
+     *      * 심각한 성능 저하를 발생하지 않는 경우
+     * 3. 위의 사례를 만족하지 못한 경우 nativeSQL을 사용한다.
+     *
+     * * from절의 서브쿼리를 사용하는 안 좋은 경우 - 한 쿼리가 많은 기능을 지원하는 경우
+     *      * 화면에 렌더링할 데이터 포맷을 맞추는 경우
+     *      * 비즈니스 로직이 포함된 경우
+     * * sql은 데이터를 가져오는 역할만 해야하고 집중해야 한다.
+     * * 로직은 필요한 layer 에서 해결해야 한다.
+     * * SQL AntiPatterns
+    */
 }
