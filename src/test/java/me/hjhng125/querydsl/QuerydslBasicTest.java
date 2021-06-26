@@ -8,6 +8,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import com.querydsl.core.QueryResults;
 import com.querydsl.core.Tuple;
 import com.querydsl.core.types.dsl.CaseBuilder;
+import com.querydsl.core.types.dsl.Expressions;
 import com.querydsl.jpa.impl.JPAQueryFactory;
 import java.util.List;
 import javax.persistence.EntityManager;
@@ -511,6 +512,37 @@ class QuerydslBasicTest {
                     .otherwise("기타")
             )
             .from(member)
+            .fetch();
+
+        //then
+        result.forEach(System.out::println);
+
+    }
+
+    @Test
+    void constant() {
+        //given
+
+        //when
+        List<Tuple> result = queryFactory
+            .select(member.username, Expressions.constant("A")) // 결과에서만 상수를 받고 JPQL, sql에서는 발생하지 않는다.
+            .from(member)
+            .fetch();
+
+        //then
+        result.forEach(System.out::println);
+    }
+
+    @Test
+    void concat() {
+        //given
+
+        //when
+        // {username}_{age}
+        List<String> result = queryFactory
+            .select(member.username.concat("_").concat(member.age.stringValue())) // stringValue()는 문자가 아닌 다른 타입들을 문자로 캐스팅해준다. Enum을 처리할 때 유용
+            .from(member)
+            .where(member.username.eq("member1"))
             .fetch();
 
         //then
