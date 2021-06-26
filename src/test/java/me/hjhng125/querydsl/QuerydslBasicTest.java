@@ -9,8 +9,11 @@ import com.querydsl.core.Tuple;
 import com.querydsl.jpa.impl.JPAQueryFactory;
 import java.util.List;
 import javax.persistence.EntityManager;
+import javax.persistence.EntityManagerFactory;
 import javax.persistence.PersistenceContext;
+import javax.persistence.PersistenceUnit;
 import me.hjhng125.querydsl.member.Member;
+import me.hjhng125.querydsl.member.QMember;
 import me.hjhng125.querydsl.team.Team;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -240,5 +243,159 @@ class QuerydslBasicTest {
         assertThat(teamA.get(member.age.avg())).isEqualTo(15);
         assertThat(teamB.get(team.name)).isEqualTo("teamB");
         assertThat(teamB.get(member.age.avg())).isEqualTo(35);
+    }
+
+    /**
+     * 팀 A에 소속된 모든 팀원
+     */
+    @Test
+    void join() {
+        //when
+        List<Member> teamA = queryFactory.selectFrom(member)
+            .join(member.team, team)
+            .where(team.name.eq("teamA"))
+            .fetch();
+
+       //then
+        assertThat(teamA)
+            .extracting("username")
+            .containsExactly("member1", "member2");
+
+    }
+
+    /**
+     * theta join : 연관관계가 없지만 조인해줌
+     * 조인을 하려하는 양 쪽 테이블의 모든 데이터를 가져와서 조인하고 where 절에서 필터링.
+     * 회원의 이름이 팀 이름과 같은 회원을 조회
+     */
+
+    @Test
+    void theta_join() {
+        //given
+        em.persist(new Member("teamA"));
+        em.persist(new Member("teamB"));
+        em.persist(new Member("teamC"));
+        //when
+
+        List<Member> eqName = queryFactory
+            .selectFrom(member)
+            .from(member, team) // 세타 조인은 그냥 from절에 테이블을 나열한다. Cartesian Product, 실제 sql은 cross 조인 발생
+            .where(member.username.eq(team.name))
+            .fetch();
+
+        //then
+        assertThat(eqName)
+            .extracting("username")
+            .containsExactly("teamA", "teamB");
+    }
+
+    /**
+     * on
+     * JPA 2.1부터 지원
+     * 1.조인 대상을 필터링
+     * 2. 연관관계 없는 엔터티 외부 조인
+    */
+
+    /**
+     * 회원과 팀을 조인
+     * 팀 이름이 teamA
+     * 회원은 모두 조회
+     * JPQL : select m, t from Member m left join m.team t on t.name = 'teamA'
+     */
+    @Test
+    void join_on_filtering() {
+        //given
+
+        //when
+        /*
+          inner join 의 경우 on에서 필터링을 하는것과 where에서 필터링하는 것은 같다.
+          어떤 것을 사용해도 무방
+          하지만 left join 의 경우 where절 에서 필터링 할 경우 필요한 left값이 필터링 될 수 있기에
+          on절에서 풀어야 한다.
+         */
+        List<Tuple> result = queryFactory
+            .select(member, team)
+            .from(member)
+            .leftJoin(member.team, team) // 연관관계가 있는 경우 id가 조인 조건에 들어감
+            .on(member.team.name.eq("teamA")) // on절은 조인할 데이터 대상을 줄이는 것(필터링)
+            .fetch();
+        //then
+        result.forEach(System.out::println);
+    }
+
+    /**
+     * 연관관계가 없는 테이블 조인
+     * 팀이름과 회원이름이 같은 회원 외부 조인으로 조회
+     */
+    @Test
+    void join_on_no_relation() {
+        //given
+        em.persist(new Member("teamA"));
+        em.persist(new Member("teamB"));
+        em.persist(new Member("teamC"));
+
+        //when
+        List<Tuple> result = queryFactory
+            .select(member, team)
+            .from(member)
+            .leftJoin(team).on(member.username.eq(team.name)) // 연관관계가 없는 경우 일반 조인과 다르게 join절에 엔터티만 들어간다.
+            .fetch();
+
+        result.forEach(System.out::println);
+        //then
+        result.forEach(item -> {
+            assertThat(item.get(member.username)).isIn("teamA", "teamB", null);
+        });
+    }
+
+    /**
+     * fetch join
+     * sql이 지원하는 기능은 아니고, sql 조인을 활용하여 연관된 엔터티를 sql 쿼리 한번으로 가져오는 방법
+     * 주로 JPQL 성능 최적화에서 사용됨.
+     */
+
+    @PersistenceUnit // entity manager를 만드는 factory를 주입받기 위한 어노테이션
+    EntityManagerFactory emf;
+
+    @Test
+    void noFetchJoin() {
+        //given
+        em.flush();
+        em.clear();
+        //when
+        Member findMember = queryFactory.selectFrom(member)
+            .where(member.username.eq("member1"))
+            .fetchOne(); // 현재 member 엔터티는 패치 전략이 Lazy기 때문에 member만 조회한다.
+
+        //then
+        boolean loaded = emf.getPersistenceUnitUtil()
+            .isLoaded(findMember.getTeam()); // isLoaded : 해당 엔터티가 컨텍스트에 로딩되었는지 아닌지 확인할 수 있도록 해줌.
+
+        assertThat(loaded).as("패치 조인 미적용").isFalse();
+
+    }
+
+    /**
+     * fetchType.Eager와 fetch join은 같은 쿼리를 발생시킨다.
+     * fetchType을 Eager로 설정하면 해당 연관관계에서 발생하는 모든 쿼리에서 join을 통해 가져오므로
+     * 특정 상황에서만 한번에 데이터를 가져오고 싶은 경우 fetch join을 사용하면 될 듯하다.
+     */
+    @Test
+    void fetchJoin() {
+        //given
+        em.flush();
+        em.clear();
+        //when
+        Member findMember = queryFactory.selectFrom(member)
+            .join(member.team, team).fetchJoin()
+            .where(member.username.eq("member1"))
+            .fetchOne(); // 현재 member 엔터티는 패치 전략이 Lazy기 때문에 member만 조회한다.
+
+        //then
+        boolean loaded = emf.getPersistenceUnitUtil()
+            .isLoaded(findMember.getTeam()); // isLoaded : 해당 엔터티가 컨텍스트에 로딩되었는지 아닌지 확인할 수 있도록 해줌.
+
+        assertThat(loaded).as("패치 조인 미적용").isTrue();
+
     }
 }
