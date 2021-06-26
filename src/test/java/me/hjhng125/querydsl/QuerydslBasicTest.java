@@ -549,4 +549,69 @@ class QuerydslBasicTest {
         result.forEach(System.out::println);
 
     }
+
+    /**
+     * Projection : select절에 어떤 데이터를 가져올지 대상을 지정하는 것
+     */
+
+    /**
+     * 대상이 하나인 경우 해당 타입으로 지정할 수 있다.
+     * username : String
+     *
+     * 대상이 여러개인 경우 튜플이나 DTO로 받아야 한다.
+     */
+
+    /**
+     * Tuple은 querydsl이 지원하는(종속적인) 객체이다.
+     * 따라서 Tuple을 controller나 service 계층까지 가져가는 것은
+     * 타 계층에까지 repository가 JPA, querydsl을 의존하게 만들며,
+     * 내부 구현 기술이 어떤 것인지 알리게 된다.
+     * Spring에서 추구하는 설계는 내부 구현 기술을 최대한 숨기는 것(의존도를 낮추는 것)에 있다.
+     * 이렇게 의존도가 놓은 설계는 결국 repository가 다른 기술을 쓰게 되면 같이 수정되어야 한다.
+     *
+     * 결국 이러한 문제를 없애기 위해 계층 간 데이터를 리턴할 때는 DTO로 변환하여 던지는 것이
+     * 의존관계를 없앨 수 있는 방법이다.
+     *
+     */
+    @Test
+    void fetch_username() {
+        //given
+
+        //when
+        List<String> result = queryFactory
+            .select(member.username)
+            .from(member)
+            .fetch();
+
+        //then
+        result.forEach(System.out::println);
+    }
+
+    @Test
+    void fetch_tuple() {
+        //given
+
+        //when
+        List<Tuple> result = queryFactory
+            .select(member.age, member.username)
+            .from(member)
+            .fetch();
+
+        //then
+        result.forEach(item -> {
+            System.out.println(item.get(member.age));
+            System.out.println(item.get(member.username));
+        });
+
+    }
+
+    @Test
+    void fetch_dto() {
+        //given
+
+        //when
+
+        //then
+
+    }
 }
