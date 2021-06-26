@@ -7,8 +7,11 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 import com.querydsl.core.QueryResults;
 import com.querydsl.core.Tuple;
+import com.querydsl.core.types.ExpressionUtils;
+import com.querydsl.core.types.Projections;
 import com.querydsl.core.types.dsl.CaseBuilder;
 import com.querydsl.core.types.dsl.Expressions;
+import com.querydsl.jpa.JPAExpressions;
 import com.querydsl.jpa.impl.JPAQueryFactory;
 import java.util.List;
 import javax.persistence.EntityManager;
@@ -16,15 +19,16 @@ import javax.persistence.EntityManagerFactory;
 import javax.persistence.PersistenceContext;
 import javax.persistence.PersistenceUnit;
 import me.hjhng125.querydsl.member.Member;
+import me.hjhng125.querydsl.member.MemberDto;
 import me.hjhng125.querydsl.member.QMember;
+import me.hjhng125.querydsl.member.QMemberDto;
 import me.hjhng125.querydsl.team.Team;
+import me.hjhng125.querydsl.user.UserDto;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.transaction.annotation.Transactional;
+import org.springframework.boot.test.autoconfigure.orm.jpa.DataJpaTest;
 
-@SpringBootTest
-@Transactional
+@DataJpaTest
 class QuerydslBasicTest {
 
     @PersistenceContext
@@ -168,8 +172,8 @@ class QuerydslBasicTest {
 
         ageDesc.forEach(System.out::println);
 
-        assertThat(ageDesc.get(0).getUsername()).isEqualTo("member5");
-        assertThat(ageDesc.get(1).getUsername()).isEqualTo("member6");
+        assertThat(ageDesc.get(0).getUsername()).isEqualTo("member6");
+        assertThat(ageDesc.get(1).getUsername()).isEqualTo("member5");
         assertThat(ageDesc.get(2).getUsername()).isEqualTo(null);
     }
 
@@ -342,6 +346,22 @@ class QuerydslBasicTest {
         result.forEach(item -> {
             assertThat(item.get(member.username)).isIn("teamA", "teamB", null);
         });
+    }
+
+    @Test
+    void distinct() {
+        //given
+        em.persist(new Member("member5", 10));
+
+        //when
+        List<Integer> result = queryFactory
+            .select(member.age).distinct()
+            .from(member)
+            .fetch();
+
+        //then
+        result.forEach(System.out::println);
+
     }
 
     /**
@@ -562,16 +582,10 @@ class QuerydslBasicTest {
      */
 
     /**
-     * Tuple은 querydsl이 지원하는(종속적인) 객체이다.
-     * 따라서 Tuple을 controller나 service 계층까지 가져가는 것은
-     * 타 계층에까지 repository가 JPA, querydsl을 의존하게 만들며,
-     * 내부 구현 기술이 어떤 것인지 알리게 된다.
-     * Spring에서 추구하는 설계는 내부 구현 기술을 최대한 숨기는 것(의존도를 낮추는 것)에 있다.
-     * 이렇게 의존도가 놓은 설계는 결국 repository가 다른 기술을 쓰게 되면 같이 수정되어야 한다.
-     *
-     * 결국 이러한 문제를 없애기 위해 계층 간 데이터를 리턴할 때는 DTO로 변환하여 던지는 것이
-     * 의존관계를 없앨 수 있는 방법이다.
-     *
+     * Tuple은 querydsl이 지원하는(종속적인) 객체이다. 따라서 Tuple을 controller나 service 계층까지 가져가는 것은 타 계층에까지 repository가 JPA, querydsl을 의존하게 만들며, 내부 구현 기술이 어떤 것인지 알리게 된다. Spring에서 추구하는 설계는 내부 구현
+     * 기술을 최대한 숨기는 것(의존도를 낮추는 것)에 있다. 이렇게 의존도가 놓은 설계는 결국 repository가 다른 기술을 쓰게 되면 같이 수정되어야 한다.
+     * <p>
+     * 결국 이러한 문제를 없애기 위해 계층 간 데이터를 리턴할 때는 DTO로 변환하여 던지는 것이 의존관계를 없앨 수 있는 방법이다.
      */
     @Test
     void fetch_username() {
@@ -605,13 +619,169 @@ class QuerydslBasicTest {
 
     }
 
+    /**
+     * JPQL에서 아래와 같이 DTO를 사용하는 것은 불가능하다. select m from Member m", MemberDto.class) m 은 entity의 alias이기 때문
+     * <p>
+     * 따라서 DTO를 사용하고 싶다면 1. DTO 객체에 projection으로 가져올 필드를 파라미터로 받는 생성자를 정의해야 한다. 2. 아래 테스트와 같이 해당 DTO를 new로 생성하듯 명시해야 한다. * JPQL에서 제공하는 new operation 문법
+     * <p>
+     * * 순수 JPA에서 DTO를 사용하기 위해 new 명령어를 사용해야함. * DTO의 모든 패키지 명을 명시해야함 * 생성자 방식만 지원 (field 주입, setter 주입 불가)
+     */
     @Test
-    void fetch_dto() {
+    void fetch_dto_by_JPQL() {
         //given
 
         //when
+        List<MemberDto> resultList =
+            em.createQuery("select new me.hjhng125.querydsl.member.MemberDto(m.username, m.age) from Member m", MemberDto.class)
+                .getResultList();
+        //then
+
+        resultList.forEach(System.out::println);
+    }
+
+    /**
+     * querydsl에서 DTO로 반환하는 방법 1. 프로퍼티 접근 - setter 2. 필드 직접 접근 3. 생성자 사용
+     */
+    @Test
+    void fetch_dto_by_querydsl_by_property() {
+        //given
+
+        //when
+        List<MemberDto> result = queryFactory
+            .select(Projections.bean(MemberDto.class,
+                member.username, // setter를 사용하는 property와 이름이 같아야 한다.
+                member.age))
+            .from(member)
+            .fetch();
 
         //then
+        result.forEach(System.out::println);
+
+    }
+
+    @Test
+    void fetch_dto_by_querydsl_by_field() {
+        //given
+
+        //when
+        List<MemberDto> result = queryFactory
+            .select(Projections.fields(MemberDto.class,
+                member.username, // getter, setter가 없어도 필드에 바로 주입됨,
+                member.age))
+            .from(member)
+            .fetch();
+
+        //then
+        result.forEach(System.out::println);
+
+    }
+
+    @Test
+    void fetch_userDto_by_querydsl_by_field() {
+        //given
+
+        //when
+        List<UserDto> result = queryFactory
+            .select(Projections.fields(UserDto.class,
+                member.username.as("name"), // field 명이 맞아야 하기에 alias를 사용해야함.
+                member.age))
+            .from(member)
+            .fetch();
+
+        //then
+        result.forEach(System.out::println);
+
+    }
+
+    @Test
+    void fetch_userDto_with_scala_subQuery_by_querydsl_by_field() {
+        //given
+
+        //when
+        List<UserDto> result = queryFactory
+            .select(Projections.fields(UserDto.class,
+                member.username.as("name"), // field 명이 맞아야 하기에 alias를 사용해야함.
+                ExpressionUtils.as(
+                    JPAExpressions
+                        .select(memberSub.age.max())
+                        .from(memberSub), "age") // field 주입을 해야하는데 서브쿼리를 쓰고 싶은 경우 ExpressionUtils를 사용해야 한다. 서브쿼리는 field이름과 안맞으니깐 그 자체를 alias한다고 생각하자. 서브쿼리가 아닌 단순 필드도 할 수 있으나 그냥 as가 간편함.
+            ))
+            .from(member)
+            .fetch();
+
+        //then
+        result.forEach(System.out::println);
+
+    }
+
+    @Test
+    void fetch_dto_by_querydsl_by_constructor() {
+        //given
+
+        //when
+        List<MemberDto> result = queryFactory
+            .select(Projections.constructor(MemberDto.class,
+                member.username, // 생성자를 통한 주입은 projection하는 값들의 순서가 맞아야 한다.
+                member.age))
+            .from(member)
+            .fetch();
+
+        //then
+        result.forEach(System.out::println);
+
+    }
+
+    @Test
+    void fetch_uesrDto_by_querydsl_by_constructor() {
+        //given
+
+        //when
+        List<UserDto> result = queryFactory
+            .select(Projections.constructor(UserDto.class, // 생성자를 통한 주입은 생성자의 타입만을 보기 때문에 필드명이 달라도 된다.
+                member.username, // 생성자를 통한 주입은 projection하는 값들의 순서가 맞아야 한다.
+                member.age))
+            .from(member)
+            .fetch();
+
+        //then
+        result.forEach(System.out::println);
+
+    }
+
+    /**
+     * Q-Type Dto를 new 연산자를 통해(생성자 그대로) 주입받을 수 있기 때문에
+     * IDE의 도움을 받아 훨씬 안정적으로 값을 받을 수 있다.
+     * 만약 타입이 안맞을 경우 컴파일 시점에 오류를 잡을 수 있다.
+     *
+     * Projections.constructor 방식은 타입이 다르거나,
+     * dto에 선언되지 않은 타입을 추가로 넣었을 때 컴파일 시점에 오류를 잡지 못하고,
+     * 런타임 시점에 잡는다는 단점이 있다.
+     *
+     * 하지만 Q-Type을 무조건 선언해야하며,
+     * DTO 자체가 querydsl에 심히 의존하게 된다는 단점이 생긴다.
+     * 따라서 querydsl에서 다른 기술로 대체하게 되면 DTO에 문제가 된다.
+     * DTO는 service, controller 계층, 혹은 API를 통해 외부로 나가는 등
+     * 여러 계층에서 사용하는데 모든 곳에 영향이 생긴다.
+     * DTO 자체가 순수성을 잃는다.
+     *
+     * 따라서 DTO가 순수하길 원한다면 이 방법은 고려되어야 한다.
+     *
+     */
+    @Test
+    void fetch_by_queryProjection() {
+        //given
+
+        //when
+        List<MemberDto> result = queryFactory
+            .select(new QMemberDto(
+                member.username,
+                member.age
+            ))
+            .from(member)
+            .fetch();
+
+        //then
+        result.forEach(System.out::println);
 
     }
 }
