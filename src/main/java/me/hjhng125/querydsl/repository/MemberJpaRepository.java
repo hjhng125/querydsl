@@ -1,21 +1,23 @@
-package me.hjhng125.querydsl.member;
+package me.hjhng125.querydsl.repository;
 
-import static me.hjhng125.querydsl.member.QMember.member;
-import static me.hjhng125.querydsl.team.QTeam.team;
+import static me.hjhng125.querydsl.model.entity.QMember.member;
+import static me.hjhng125.querydsl.model.entity.QTeam.team;
 import static org.springframework.util.StringUtils.hasText;
 
 import com.querydsl.core.BooleanBuilder;
-import com.querydsl.core.types.Predicate;
 import com.querydsl.core.types.dsl.BooleanExpression;
 import com.querydsl.jpa.impl.JPAQueryFactory;
 import java.util.List;
 import java.util.Optional;
 import javax.persistence.EntityManager;
 import lombok.RequiredArgsConstructor;
-import me.hjhng125.querydsl.team.QTeam;
+import me.hjhng125.querydsl.model.MemberSearchCondition;
+import me.hjhng125.querydsl.model.dto.MemberTeamDTO;
+import me.hjhng125.querydsl.model.dto.QMemberTeamDTO;
+import me.hjhng125.querydsl.model.entity.Member;
+import me.hjhng125.querydsl.model.entity.QMember;
 import org.springframework.stereotype.Repository;
 import org.springframework.transaction.annotation.Transactional;
-import org.springframework.util.StringUtils;
 
 @Repository
 @RequiredArgsConstructor

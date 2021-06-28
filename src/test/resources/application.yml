@@ -1,6 +1,6 @@
 spring:
   profiles:
-    active: local
+    active: test
   jpa:
     # 이 부분에 sql 세팅은 System.out으로 출력됨
     # 해당 옵션을 활성화 할 시 쿼리가 2번 출력되므로 주석 처리

@@ -1,4 +1,4 @@
-package me.hjhng125.querydsl.hello;
+package me.hjhng125.querydsl.controller;
 
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RestController;

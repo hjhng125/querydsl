@@ -1,4 +1,4 @@
-package me.hjhng125.querydsl.team;
+package me.hjhng125.querydsl.model.entity;
 
 import java.util.HashSet;
 import java.util.Set;
@@ -11,7 +11,7 @@ import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.ToString;
-import me.hjhng125.querydsl.member.Member;
+import me.hjhng125.querydsl.model.entity.Member;
 
 @Getter
 @Entity

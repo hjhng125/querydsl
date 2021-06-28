@@ -1,4 +1,4 @@
-package me.hjhng125.querydsl.user;
+package me.hjhng125.querydsl.model.dto;
 
 import lombok.AllArgsConstructor;
 import lombok.Getter;
