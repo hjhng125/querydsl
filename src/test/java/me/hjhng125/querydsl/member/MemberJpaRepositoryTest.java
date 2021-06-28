@@ -117,4 +117,38 @@ class MemberJpaRepositoryTest {
             .containsExactly("member3", "member4");
     }
 
+    @Test
+    void searchByWhereParam() {
+        //given
+        MemberSearchCondition memberSearchCondition = MemberSearchCondition.builder()
+            .teamName("teamB")
+            .ageGoe(20)
+            .ageLoe(40)
+            .build();
+
+        //when
+        List<MemberTeamDTO> memberTeamDTOS = memberJpaRepository.searchByWhereParam(memberSearchCondition);
+
+        //then
+        assertThat(memberTeamDTOS).extracting("username")
+            .containsExactly("member3", "member4");
+    }
+
+    @Test
+    void betweenTest() {
+        //given
+
+        //when
+        List<Member> result = queryFactory
+            .selectFrom(QMember.member)
+            .where(QMember.member.age.between(30, 40))
+            .fetch();
+
+        //then
+        assertThat(result)
+            .extracting("username")
+            .containsExactly("member3", "member4");
+
+    }
+
 }

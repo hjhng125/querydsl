@@ -5,6 +5,7 @@ import static me.hjhng125.querydsl.team.QTeam.team;
 import static org.springframework.util.StringUtils.hasText;
 
 import com.querydsl.core.BooleanBuilder;
+import com.querydsl.core.types.Predicate;
 import com.querydsl.core.types.dsl.BooleanExpression;
 import com.querydsl.jpa.impl.JPAQueryFactory;
 import java.util.List;
@@ -97,5 +98,50 @@ public class MemberJpaRepository {
         }
 
         return builder;
+    }
+
+    /**
+     * BooleanBuilder 를 사용하는 위 방식과 무엇이 더 좋다 안좋다를 따지긴 애매모호하다.
+     * BooleanExpression 을 사용한 아래 방식은 각 조건을 따로 나누었기 때문에 코드 재사용성이
+     * 더 좋다고 생각한다.
+     *
+     * 각 조건에 이름을 부여할 수 있는게 장점인 것 같다.
+     * @param condition
+     * @return
+     */
+    public List<MemberTeamDTO> searchByWhereParam(MemberSearchCondition condition) {
+        return jpaQueryFactory
+            .select(new QMemberTeamDTO(
+                member.id,
+                member.username,
+                member.age,
+                team.id,
+                team.name
+            ))
+            .from(member)
+            .leftJoin(member.team, team)
+            .where(
+                usernameEquals(condition.getUsername()),
+                teamNameEquals(condition.getTeamName()),
+                ageGoe(condition.getAgeGoe()),
+                ageLoe(condition.getAgeLoe())
+                )
+            .fetch();
+    }
+
+    private BooleanExpression usernameEquals(String username) {
+        return hasText(username) ? member.username.eq(username) : null;
+    }
+
+    private BooleanExpression teamNameEquals(String teamName) {
+        return hasText(teamName) ? team.name.eq(teamName) : null;
+    }
+
+    private BooleanExpression ageGoe(Integer ageGoe) {
+        return ageGoe != null ? member.age.goe(ageGoe) : null;
+    }
+
+    private BooleanExpression ageLoe(Integer ageLoe) {
+        return ageLoe != null ? member.age.loe(ageLoe) : null;
     }
 }
