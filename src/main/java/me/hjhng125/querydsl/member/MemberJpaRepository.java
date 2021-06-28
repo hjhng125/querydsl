@@ -1,15 +1,20 @@
 package me.hjhng125.querydsl.member;
 
 import static me.hjhng125.querydsl.member.QMember.member;
+import static me.hjhng125.querydsl.team.QTeam.team;
+import static org.springframework.util.StringUtils.hasText;
 
+import com.querydsl.core.BooleanBuilder;
 import com.querydsl.core.types.dsl.BooleanExpression;
 import com.querydsl.jpa.impl.JPAQueryFactory;
 import java.util.List;
 import java.util.Optional;
 import javax.persistence.EntityManager;
 import lombok.RequiredArgsConstructor;
+import me.hjhng125.querydsl.team.QTeam;
 import org.springframework.stereotype.Repository;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.util.StringUtils;
 
 @Repository
 @RequiredArgsConstructor
@@ -55,5 +60,42 @@ public class MemberJpaRepository {
 
     private BooleanExpression usernameEq(String username) {
         return member.username.eq(username);
+    }
+
+    public List<MemberTeamDTO> searchByBuilder(MemberSearchCondition condition) {
+        return jpaQueryFactory
+            .select(new QMemberTeamDTO(
+                member.id,
+                member.username,
+                member.age,
+                team.id,
+                team.name
+            ))
+            .from(member)
+            .leftJoin(member.team, team)
+            .where(condition(condition))
+            .fetch();
+    }
+
+    private BooleanBuilder condition(MemberSearchCondition condition) {
+        BooleanBuilder builder = new BooleanBuilder();
+
+        if (hasText(condition.getUsername())) {
+            builder.and(member.username.eq(condition.getUsername()));
+        }
+
+        if (hasText(condition.getTeamName())) {
+            builder.and(team.name.eq(condition.getTeamName()));
+        }
+
+        if (condition.getAgeGoe() != null) {
+            builder.and(member.age.goe(condition.getAgeGoe()));
+        }
+
+        if (condition.getAgeLoe() != null) {
+            builder.and(member.age.loe(condition.getAgeLoe()));
+        }
+
+        return builder;
     }
 }
