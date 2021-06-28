@@ -1,4 +1,4 @@
-package me.hjhng125.querydsl.member;
+package me.hjhng125.querydsl.model.entity;
 
 import javax.persistence.Column;
 import javax.persistence.Entity;
@@ -11,7 +11,6 @@ import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.ToString;
-import me.hjhng125.querydsl.team.Team;
 
 @Entity
 @Getter

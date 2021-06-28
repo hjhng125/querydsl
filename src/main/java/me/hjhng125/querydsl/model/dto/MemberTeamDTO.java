@@ -1,4 +1,4 @@
-package me.hjhng125.querydsl.member;
+package me.hjhng125.querydsl.model.dto;
 
 import com.querydsl.core.annotations.QueryProjection;
 import lombok.Getter;

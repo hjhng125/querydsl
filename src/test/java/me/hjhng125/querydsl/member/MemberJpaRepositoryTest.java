@@ -1,12 +1,17 @@
 package me.hjhng125.querydsl.member;
 
+import static me.hjhng125.querydsl.model.entity.QMember.member;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import com.querydsl.jpa.impl.JPAQueryFactory;
 import java.util.List;
 import javax.persistence.EntityManager;
 import me.hjhng125.querydsl.config.QuerydslConfig;
-import me.hjhng125.querydsl.team.Team;
+import me.hjhng125.querydsl.model.MemberSearchCondition;
+import me.hjhng125.querydsl.model.dto.MemberTeamDTO;
+import me.hjhng125.querydsl.model.entity.Member;
+import me.hjhng125.querydsl.repository.MemberJpaRepository;
+import me.hjhng125.querydsl.model.entity.Team;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -20,11 +25,12 @@ class MemberJpaRepositoryTest {
     @Autowired EntityManager em;
     @Autowired JPAQueryFactory queryFactory;
     MemberJpaRepository memberJpaRepository;
-    Member member;
+    Member test;
 
     @BeforeEach
     public void beforeEach() {
         memberJpaRepository = new MemberJpaRepository(em, queryFactory);
+        test = new Member("member5", 50);
         Team teamA = new Team("teamA");
         Team teamB = new Team("teamB");
 
@@ -45,20 +51,20 @@ class MemberJpaRepositoryTest {
 
     @Test
     void findById() {
-        Member findMember = memberJpaRepository.findById(member.getId()).get();
-        assertThat(findMember).isEqualTo(member);
+        Member findMember = memberJpaRepository.findById(test.getId()).get();
+        assertThat(findMember).isEqualTo(test);
     }
 
     @Test
     void findAll() {
         List<Member> all = memberJpaRepository.findAll();
-        assertThat(all).contains(member);
+        assertThat(all).contains(test);
     }
 
     @Test
     void findByUsername() {
         List<Member> findMember = memberJpaRepository.findByUsername("member1");
-        assertThat(findMember).contains(member);
+        assertThat(findMember).contains(test);
     }
 
     @Test
@@ -69,7 +75,7 @@ class MemberJpaRepositoryTest {
         List<Member> all = memberJpaRepository.findAllQuerydsl();
 
         //then
-        assertThat(all).contains(member);
+        assertThat(all).contains(test);
 
     }
 
@@ -81,7 +87,7 @@ class MemberJpaRepositoryTest {
         List<Member> findMember = memberJpaRepository.findByUsernameQuerydsl("member1");
 
         //then
-        assertThat(findMember).contains(member);
+        assertThat(findMember).contains(test);
 
     }
 
@@ -140,8 +146,8 @@ class MemberJpaRepositoryTest {
 
         //when
         List<Member> result = queryFactory
-            .selectFrom(QMember.member)
-            .where(QMember.member.age.between(30, 40))
+            .selectFrom(member)
+            .where(member.age.between(30, 40))
             .fetch();
 
         //then
