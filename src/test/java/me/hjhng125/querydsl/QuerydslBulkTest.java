@@ -1,21 +1,20 @@
 package me.hjhng125.querydsl;
 
-import static me.hjhng125.querydsl.member.QMember.member;
+import static me.hjhng125.querydsl.model.entity.QMember.member;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import com.querydsl.jpa.impl.JPAQueryFactory;
 import java.util.List;
 import javax.persistence.EntityManager;
 import javax.persistence.PersistenceContext;
-import me.hjhng125.querydsl.member.Member;
-import me.hjhng125.querydsl.member.QMember;
-import me.hjhng125.querydsl.team.Team;
+import me.hjhng125.querydsl.model.entity.Member;
+import me.hjhng125.querydsl.model.entity.QMember;
+import me.hjhng125.querydsl.model.entity.Team;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.test.autoconfigure.jdbc.AutoConfigureTestDatabase;
 import org.springframework.boot.test.autoconfigure.jdbc.AutoConfigureTestDatabase.Replace;
 import org.springframework.boot.test.autoconfigure.orm.jpa.DataJpaTest;
-import org.springframework.test.annotation.Commit;
 
 @DataJpaTest
 @AutoConfigureTestDatabase(replace = Replace.NONE)

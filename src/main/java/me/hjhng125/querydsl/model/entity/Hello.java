@@ -1,4 +1,4 @@
-package me.hjhng125.querydsl.hello;
+package me.hjhng125.querydsl.model.entity;
 
 import javax.persistence.Entity;
 import javax.persistence.GeneratedValue;

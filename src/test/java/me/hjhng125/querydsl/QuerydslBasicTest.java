@@ -1,8 +1,8 @@
 package me.hjhng125.querydsl;
 
 import static com.querydsl.jpa.JPAExpressions.select;
-import static me.hjhng125.querydsl.member.QMember.member;
-import static me.hjhng125.querydsl.team.QTeam.team;
+import static me.hjhng125.querydsl.model.entity.QMember.member;
+import static me.hjhng125.querydsl.model.entity.QTeam.team;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import com.querydsl.core.QueryResults;
@@ -18,12 +18,12 @@ import javax.persistence.EntityManager;
 import javax.persistence.EntityManagerFactory;
 import javax.persistence.PersistenceContext;
 import javax.persistence.PersistenceUnit;
-import me.hjhng125.querydsl.member.Member;
-import me.hjhng125.querydsl.member.MemberDto;
-import me.hjhng125.querydsl.member.QMember;
-import me.hjhng125.querydsl.member.QMemberDto;
-import me.hjhng125.querydsl.team.Team;
-import me.hjhng125.querydsl.user.UserDto;
+import me.hjhng125.querydsl.model.dto.QMemberDto;
+import me.hjhng125.querydsl.model.entity.Member;
+import me.hjhng125.querydsl.model.dto.MemberDto;
+import me.hjhng125.querydsl.model.entity.QMember;
+import me.hjhng125.querydsl.model.entity.Team;
+import me.hjhng125.querydsl.model.dto.UserDto;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.test.autoconfigure.orm.jpa.DataJpaTest;
@@ -632,7 +632,7 @@ class QuerydslBasicTest {
 
         //when
         List<MemberDto> resultList =
-            em.createQuery("select new me.hjhng125.querydsl.member.MemberDto(m.username, m.age) from Member m", MemberDto.class)
+            em.createQuery("select new me.hjhng125.querydsl.model.dto.MemberDto(m.username, m.age) from Member m", MemberDto.class)
                 .getResultList();
         //then
 
