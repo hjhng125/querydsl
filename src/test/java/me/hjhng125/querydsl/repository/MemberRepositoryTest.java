@@ -120,4 +120,22 @@ class MemberRepositoryTest {
             .containsExactly("member1", "member2", "member3");
 
     }
+
+    @Test
+    void searchPageNoCount() {
+        //given
+        MemberSearchCondition memberSearchCondition = MemberSearchCondition.builder()
+            .build();
+        PageRequest pageRequest = PageRequest.of(0, 4);
+
+        //when
+        Page<MemberTeamDTO> memberTeamDTOPage = memberRepository.searchPageNoCountQuery(memberSearchCondition, pageRequest);
+
+        //then
+        assertThat(memberTeamDTOPage.getSize()).isEqualTo(4);
+        assertThat(memberTeamDTOPage.getContent())
+            .extracting("username")
+            .containsExactly("member1", "member2", "member3", "member4");
+
+    }
 }

@@ -6,15 +6,18 @@ import static org.springframework.util.StringUtils.hasText;
 
 import com.querydsl.core.QueryResults;
 import com.querydsl.core.types.dsl.BooleanExpression;
+import com.querydsl.jpa.impl.JPAQuery;
 import com.querydsl.jpa.impl.JPAQueryFactory;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
 import me.hjhng125.querydsl.model.MemberSearchCondition;
 import me.hjhng125.querydsl.model.dto.MemberTeamDTO;
 import me.hjhng125.querydsl.model.dto.QMemberTeamDTO;
+import me.hjhng125.querydsl.model.entity.Member;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.support.PageableExecutionUtils;
 
 /**
  * naming은 postfix가 Impl 이어야하며
@@ -119,7 +122,7 @@ public class MemberRepositoryCustomImpl implements MemberRepositoryCustom {
     public Page<MemberTeamDTO> searchPageComplex(MemberSearchCondition condition, Pageable pageable) {
         List<MemberTeamDTO> contents = getMemberTeamDTOS(condition, pageable);
 
-        long total = getTotal(condition);
+        long total = getTotalQuery(condition).fetchCount();
 
         return new PageImpl<>(contents, pageable, total);
     }
@@ -146,7 +149,7 @@ public class MemberRepositoryCustomImpl implements MemberRepositoryCustom {
             .fetch();
     }
 
-    private long getTotal(MemberSearchCondition condition) {
+    private JPAQuery<Member> getTotalQuery(MemberSearchCondition condition) {
         return jpaQueryFactory
             .select(member)
             .from(member)
@@ -156,7 +159,41 @@ public class MemberRepositoryCustomImpl implements MemberRepositoryCustom {
                 teamNameEquals(condition.getTeamName()),
                 ageGoe(condition.getAgeGoe()),
                 ageLoe(condition.getAgeLoe())
-            )
-            .fetchCount();
+            );
     }
+
+    /**
+     * 때에 따라 카운트 쿼리를 생략할 수 있다.<br/>
+     * 1. 시작 페이지면서 컨텐츠 사이즈가 페이지 사이즈보다 작을 때 <br/>
+     * 2. 마지막 페이지일 떄 (offset + 컨텐트 사이즈로 전체 사이즈를 구할)
+     * <p/>
+     * PageableExecutionUtils.getPage() 함수는<br/>
+     * 마지막 인자로 카운트 쿼리 함수를 받는다.<br/>
+     * 내부적으로 위처럼 카운트를 생략할 수 있는 경우 함수를 실행하지 않는다.
+     * </p>
+     * 이 방법이 위의 방법보다 좀 더 최적화된 방법이므로 이 방법을 사용하도록 하자.
+     *
+     * <p/>
+     * if (pageable.isUnpaged() || pageable.getOffset() == 0) {
+     * <p/>
+     * 			if (pageable.isUnpaged() || pageable.getPageSize() > content.size()) {
+     * 				return new PageImpl<>(content, pageable, content.size());
+     *                        }
+     * <p/>
+     * 			return new PageImpl<>(content, pageable, totalSupplier.getAsLong());* 		}
+     * <p/>
+     * 		if (content.size() != 0 && pageable.getPageSize() > content.size()) {
+     * 			return new PageImpl<>(content, pageable, pageable.getOffset() + content.size());
+     *        }
+     * <p/>
+     * 		return new PageImpl<>(content, pageable, totalSupplier.getAsLong());
+     */
+    public Page<MemberTeamDTO> searchPageNoCountQuery(MemberSearchCondition condition, Pageable pageable) {
+        List<MemberTeamDTO> contents = getMemberTeamDTOS(condition, pageable);
+
+        JPAQuery<Member> countQuery = getTotalQuery(condition);
+
+        return PageableExecutionUtils.getPage(contents, pageable, countQuery::fetchCount);
+    }
+
 }
