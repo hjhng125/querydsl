@@ -16,6 +16,8 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.orm.jpa.DataJpaTest;
 import org.springframework.context.annotation.Import;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
 
 @DataJpaTest
 @Import(QuerydslConfig.class)
@@ -81,5 +83,41 @@ class MemberRepositoryTest {
         //then
         assertThat(memberTeamDTOS).extracting("username")
             .containsExactly("member3", "member4");
+    }
+
+    @Test
+    void searchPageSimple() {
+        //given
+        MemberSearchCondition memberSearchCondition = MemberSearchCondition.builder()
+            .build();
+        PageRequest pageRequest = PageRequest.of(0, 3);
+
+        //when
+        Page<MemberTeamDTO> memberTeamDTOPage = memberRepository.searchPageSimple(memberSearchCondition, pageRequest);
+
+        //then
+        assertThat(memberTeamDTOPage.getSize()).isEqualTo(3);
+        assertThat(memberTeamDTOPage.getContent())
+            .extracting("username")
+            .containsExactly("member1", "member2", "member3");
+
+    }
+
+    @Test
+    void searchPageComplex() {
+        //given
+        MemberSearchCondition memberSearchCondition = MemberSearchCondition.builder()
+            .build();
+        PageRequest pageRequest = PageRequest.of(0, 3);
+
+        //when
+        Page<MemberTeamDTO> memberTeamDTOPage = memberRepository.searchPageComplex(memberSearchCondition, pageRequest);
+
+        //then
+        assertThat(memberTeamDTOPage.getSize()).isEqualTo(3);
+        assertThat(memberTeamDTOPage.getContent())
+            .extracting("username")
+            .containsExactly("member1", "member2", "member3");
+
     }
 }
