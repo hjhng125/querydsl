@@ -1,5 +1,6 @@
 package me.hjhng125.querydsl.repository;
 
+import static me.hjhng125.querydsl.model.entity.QMember.member;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import java.util.List;
@@ -10,6 +11,7 @@ import me.hjhng125.querydsl.config.QuerydslConfig;
 import me.hjhng125.querydsl.model.MemberSearchCondition;
 import me.hjhng125.querydsl.model.dto.MemberTeamDTO;
 import me.hjhng125.querydsl.model.entity.Member;
+import me.hjhng125.querydsl.model.entity.QMember;
 import me.hjhng125.querydsl.model.entity.Team;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -137,5 +139,16 @@ class MemberRepositoryTest {
             .extracting("username")
             .containsExactly("member1", "member2", "member3", "member4");
 
+    }
+
+    @Test
+    void querydslPredicateExecutorTest() {
+        Iterable<Member> result = memberRepository.findAll(
+            member.age.between(20, 40) // QMember.member
+                .and(member.username.eq("member2")));
+
+        result.forEach(System.out::println);
+        assertThat(result).extracting("username")
+            .containsExactly("member2");
     }
 }
