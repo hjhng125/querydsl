@@ -6,17 +6,20 @@ import static org.springframework.util.StringUtils.hasText;
 
 import com.querydsl.core.QueryResults;
 import com.querydsl.core.types.dsl.BooleanExpression;
+import com.querydsl.jpa.JPQLQuery;
 import com.querydsl.jpa.impl.JPAQuery;
 import com.querydsl.jpa.impl.JPAQueryFactory;
 import java.util.List;
-import lombok.RequiredArgsConstructor;
+import java.util.Objects;
 import me.hjhng125.querydsl.model.MemberSearchCondition;
 import me.hjhng125.querydsl.model.dto.MemberTeamDTO;
 import me.hjhng125.querydsl.model.dto.QMemberTeamDTO;
 import me.hjhng125.querydsl.model.entity.Member;
+import me.hjhng125.querydsl.repository.MemberTestRepository.Test;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.jpa.repository.support.QuerydslRepositorySupport;
 import org.springframework.data.support.PageableExecutionUtils;
 
 /**
@@ -38,13 +41,19 @@ import org.springframework.data.support.PageableExecutionUtils;
  * <br/>
  * 자동으로 커스텀 리포지토리 구현체를 찾아 빈으로 등록함.
  */
-@RequiredArgsConstructor
-public class MemberRepositoryCustomImpl implements MemberRepositoryCustom {
+public class MemberRepositoryCustomImpl extends QuerydslRepositorySupport implements MemberRepositoryCustom {
 
     private final JPAQueryFactory jpaQueryFactory;
 
+    public MemberRepositoryCustomImpl(JPAQueryFactory jpaQueryFactory) {
+        super(Member.class);
+        this.jpaQueryFactory = jpaQueryFactory;
+    }
+
     @Override
     public List<MemberTeamDTO> search(MemberSearchCondition condition) {
+        MemberTestRepository.Test testRepository = new MemberTestRepository.Test();
+
         return jpaQueryFactory
             .select(new QMemberTeamDTO(
                 member.id,
@@ -104,6 +113,40 @@ public class MemberRepositoryCustomImpl implements MemberRepositoryCustom {
             .fetchResults(); // contents를 가져오는 쿼리와 count를 가져오는 쿼리 두번 날림.
 
         return new PageImpl<>(results.getResults(), pageable, results.getTotal());
+
+    }
+
+    /**
+     * QuerydslRepositorySupport를 사용하면 JPAQueryFactory와 다르게 from()으로 시작한다.<br/>
+     * 또한 getQuerydsl()이라는 메소드를 제공하는데, 이는 spring data jpa가 제공하는 Querydsl라는 헬퍼 클래스를 반환한다.<br/>
+     * Querydsl 객체는 applyPagination() 메소드를 제공하는데 이는 Pageable을 인자로 받아 내부에서 페이징한다.<br/>
+     * 위에서 메소드 체인으로 적용했던 offset(), limit() 코드가 줄어드는 장점이 있다.<br/>
+     * 하지만 Sort는 적용할 시 오류가 발생한다.<br/>
+     * 또한 from()으로 시작하기에 JPAQueryFactory 보다 명시적이지 않다. <br/>
+     */
+    @Override
+    public Page<MemberTeamDTO> searchPageSimpleV2(MemberSearchCondition condition, Pageable pageable) {
+        JPQLQuery<MemberTeamDTO> query = from(member)
+            .leftJoin(member.team, team)
+            .where(
+                usernameEquals(condition.getUsername()),
+                teamNameEquals(condition.getTeamName()),
+                ageGoe(condition.getAgeGoe()),
+                ageLoe(condition.getAgeLoe())
+            )
+            .select(new QMemberTeamDTO(
+                member.id,
+                member.username,
+                member.age,
+                team.id,
+                team.name
+            ))
+            .offset(pageable.getOffset())
+            .limit(pageable.getPageSize());
+
+        JPQLQuery<MemberTeamDTO> memberTeamDTOJPQLQuery = Objects.requireNonNull(getQuerydsl()).applyPagination(pageable, query);
+
+        return new PageImpl<>(memberTeamDTOJPQLQuery.fetch(), pageable, memberTeamDTOJPQLQuery.fetchCount());
 
     }
 

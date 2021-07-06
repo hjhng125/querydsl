@@ -11,7 +11,6 @@ import me.hjhng125.querydsl.config.QuerydslConfig;
 import me.hjhng125.querydsl.model.MemberSearchCondition;
 import me.hjhng125.querydsl.model.dto.MemberTeamDTO;
 import me.hjhng125.querydsl.model.entity.Member;
-import me.hjhng125.querydsl.model.entity.QMember;
 import me.hjhng125.querydsl.model.entity.Team;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -150,5 +149,18 @@ class MemberRepositoryTest {
         result.forEach(System.out::println);
         assertThat(result).extracting("username")
             .containsExactly("member2");
+    }
+
+    @Test
+    void querydslRepositorySupportTest() {
+        MemberSearchCondition memberSearchCondition = MemberSearchCondition.builder()
+            .build();
+        Page<MemberTeamDTO> result = memberRepository.searchPageSimpleV2(memberSearchCondition, PageRequest.of(0, 10));
+        result.forEach(System.out::println);
+
+        assertThat(result.getSize()).isEqualTo(10);
+        assertThat(result.getContent())
+            .extracting("username")
+            .containsExactly("member1", "member2", "member3", "member4");
     }
 }
