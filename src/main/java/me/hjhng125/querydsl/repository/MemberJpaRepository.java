@@ -15,7 +15,6 @@ import me.hjhng125.querydsl.model.MemberSearchCondition;
 import me.hjhng125.querydsl.model.dto.MemberTeamDTO;
 import me.hjhng125.querydsl.model.dto.QMemberTeamDTO;
 import me.hjhng125.querydsl.model.entity.Member;
-import me.hjhng125.querydsl.model.entity.QMember;
 import org.springframework.stereotype.Repository;
 import org.springframework.transaction.annotation.Transactional;
 
