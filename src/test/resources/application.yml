@@ -22,4 +22,4 @@ logging:
   level:
     org.hibernate.SQL: debug
     # 아래 옵션은 parameter binding 시 보기 힘들어 외부 라이브러리 사용하였기에 주석 처리
-    org.hibernate.type: trace
+    #org.hibernate.type: trace
