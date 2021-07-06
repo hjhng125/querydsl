@@ -9,7 +9,6 @@ import java.util.List;
 import java.util.function.Function;
 import javax.annotation.PostConstruct;
 import javax.persistence.EntityManager;
-import me.hjhng125.querydsl.repository.MemberTestRepository.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;

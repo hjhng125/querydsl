@@ -15,7 +15,6 @@ import me.hjhng125.querydsl.model.MemberSearchCondition;
 import me.hjhng125.querydsl.model.dto.MemberTeamDTO;
 import me.hjhng125.querydsl.model.dto.QMemberTeamDTO;
 import me.hjhng125.querydsl.model.entity.Member;
-import me.hjhng125.querydsl.repository.MemberTestRepository.Test;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
@@ -52,8 +51,6 @@ public class MemberRepositoryCustomImpl extends QuerydslRepositorySupport implem
 
     @Override
     public List<MemberTeamDTO> search(MemberSearchCondition condition) {
-        MemberTestRepository.Test testRepository = new MemberTestRepository.Test();
-
         return jpaQueryFactory
             .select(new QMemberTeamDTO(
                 member.id,
