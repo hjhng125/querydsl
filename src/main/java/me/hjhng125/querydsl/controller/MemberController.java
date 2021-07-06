@@ -48,6 +48,10 @@ public class MemberController {
      * spring data의 Sort를 querydsl에 적용하기 <br/> OrderSpecifier 사용 <br/> spring data의 Sort는 하나의 엔터티에서 조회할 경우는 가능하나, join이 포함된 복잡한 쿼리에서 잘 동작하지 않는다. <br/> 그런 경우 파라미터로 직접 받아서 사용한다.
      */
 
+    /**
+     * 테이블의 연관관계의 경우 제대로 동작하지 않음 확인 <br/>
+     * QuerydslPredicateExecutor를 사용하여 연관관계가 있는 엔터티 조회 시 무한으로 순회하는 현상 발견
+     */
     @GetMapping("/v5/members")
     public Iterable<Member> searchMemberV5(MemberSearchCondition condition) {
         return memberRepository.findAll(
