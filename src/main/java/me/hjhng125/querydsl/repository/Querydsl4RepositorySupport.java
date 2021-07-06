@@ -21,9 +21,18 @@ import org.springframework.stereotype.Repository;
 import org.springframework.util.Assert;
 
 /**
- * QuerydslRepositorySupport는 <br/> 1. Sort를 적용할 시 정상작동하지 않는다. <br/> 2. 제공하는 applyPagination() 메소드도 그닥 훨씬 편하다 와닿지 않았다. 3. from()으로 시작하는 문법이 명시적이지 않았다. <p/>
- * QuerydslRepositorySupport Custom Class를 만들어보자. 이 커스텀 클래스는 <br/> 1. spring data가 제공하는 페이징을 편리하게 해주고 <br/> 2. 페이징과 카운트 쿼리를 분리할 수 있다. <br/> 3. 또한, spring data가 제공하는 Sort를 지원한다.
- * <br/> 4. select(), selectFrom()으로 시작할 수 있다. <br/> 5. EntityManager, QueryFactory를 제공한다.
+ * QuerydslRepositorySupport는
+ * 1. Sort를 적용할 시 정상작동하지 않는다.
+ * 2. 제공하는 applyPagination() 메소드도 그닥 훨씬 편하다 와닿지 않았다.
+ * 3. from()으로 시작하는 문법이 명시적이지 않았다.
+ * <p/>
+ * QuerydslRepositorySupport Custom Class를 만들어보자. 이 커스텀 클래스는
+ * 1. spring data가 제공하는 페이징을 편리하게 해주고
+ * 2. 페이징과 카운트 쿼리를 분리할 수 있다.
+ * 3. 또한, spring data가 제공하는 Sort를 지원한다.
+ * 4. select(), selectFrom()으로 시작할 수 있다.
+ * 5. EntityManager, QueryFactory를 제공한다.
+ * <p/>
  */
 @Repository
 public abstract class Querydsl4RepositorySupport {
