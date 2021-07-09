@@ -18,6 +18,7 @@ import javax.persistence.EntityManager;
 import javax.persistence.EntityManagerFactory;
 import javax.persistence.PersistenceContext;
 import javax.persistence.PersistenceUnit;
+import me.hjhng125.querydsl.config.QuerydslConfig;
 import me.hjhng125.querydsl.model.dto.QMemberDto;
 import me.hjhng125.querydsl.model.entity.Member;
 import me.hjhng125.querydsl.model.dto.MemberDto;
@@ -27,8 +28,10 @@ import me.hjhng125.querydsl.model.dto.UserDto;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.test.autoconfigure.orm.jpa.DataJpaTest;
+import org.springframework.context.annotation.Import;
 
 @DataJpaTest
+@Import(QuerydslConfig.class)
 class QuerydslBasicTest {
 
     @PersistenceContext
@@ -270,7 +273,9 @@ class QuerydslBasicTest {
     }
 
     /**
-     * theta join : 연관관계가 없지만 조인해줌 조인을 하려하는 양 쪽 테이블의 모든 데이터를 가져와서 조인하고 where 절에서 필터링. 회원의 이름이 팀 이름과 같은 회원을 조회
+     * theta join : 연관관계가 없지만 조인해줌
+     * 조인을 하려하는 양 쪽 테이블의 모든 데이터를 가져와서 조인하고 where 절에서 필터링.
+     * 회원의 이름이 팀 이름과 같은 회원을 조회
      */
 
     @Test
@@ -365,7 +370,9 @@ class QuerydslBasicTest {
     }
 
     /**
-     * fetch join sql이 지원하는 기능은 아니고, sql 조인을 활용하여 연관된 엔터티를 sql 쿼리 한번으로 가져오는 방법 주로 JPQL 성능 최적화에서 사용됨.
+     * fetch join sql이 지원하는 기능은 아니고,
+     * sql 조인을 활용하여 연관된 엔터티를 sql 쿼리 한번으로 가져오는 방법
+     * 주로 JPQL 성능 최적화에서 사용됨.
      */
 
     @PersistenceUnit // entity manager를 만드는 factory를 주입받기 위한 어노테이션
@@ -389,8 +396,26 @@ class QuerydslBasicTest {
 
     }
 
+    @Test
+    void noFetchJoin2() {
+        em.flush();
+        em.clear();
+
+        Member findMember = queryFactory
+            .selectFrom(member)
+            .join(member.team, team)
+            .where(member.username.eq("member1"))
+            .fetchOne();
+
+        boolean isLoaded = emf.getPersistenceUnitUtil().isLoaded(findMember.getTeam());
+
+        assertThat(isLoaded).as("패치 조인 미적용").isFalse();
+    }
+
     /**
-     * fetchType.Eager와 fetch join은 같은 쿼리를 발생시킨다. fetchType을 Eager로 설정하면 해당 연관관계에서 발생하는 모든 쿼리에서 join을 통해 가져오므로 특정 상황에서만 한번에 데이터를 가져오고 싶은 경우 fetch join을 사용하면 될 듯하다.
+     * fetchType.Eager와 fetch join은 같은 쿼리를 발생시킨다.
+     * fetchType을 Eager로 설정하면 해당 연관관계에서 발생하는 모든 쿼리에서 join을 통해 가져오므로
+     * 특정 상황에서만 한번에 데이터를 가져오고 싶은 경우 fetch join을 사용하면 될 듯하다.
      */
     @Test
     void fetchJoin() {
@@ -401,13 +426,13 @@ class QuerydslBasicTest {
         Member findMember = queryFactory.selectFrom(member)
             .join(member.team, team).fetchJoin()
             .where(member.username.eq("member1"))
-            .fetchOne(); // 현재 member 엔터티는 패치 전략이 Lazy기 때문에 member만 조회한다.
+            .fetchOne();
 
         //then
         boolean loaded = emf.getPersistenceUnitUtil()
-            .isLoaded(findMember.getTeam()); // isLoaded : 해당 엔터티가 컨텍스트에 로딩되었는지 아닌지 확인할 수 있도록 해줌.
+            .isLoaded(findMember.getTeam());
 
-        assertThat(loaded).as("패치 조인 미적용").isTrue();
+        assertThat(loaded).as("패치 조인 적용").isTrue();
 
     }
 
