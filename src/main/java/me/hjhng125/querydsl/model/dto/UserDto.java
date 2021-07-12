@@ -7,12 +7,10 @@ import lombok.Setter;
 import lombok.ToString;
 
 @Getter
-@Setter
 @ToString
-@NoArgsConstructor
 @AllArgsConstructor
 public class UserDto {
 
-    private String name;
-    private int age;
+    private final String name;
+    private final int age;
 }

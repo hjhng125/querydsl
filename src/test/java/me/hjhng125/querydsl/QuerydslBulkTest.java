@@ -4,31 +4,36 @@ import static me.hjhng125.querydsl.model.entity.QMember.member;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import com.querydsl.jpa.impl.JPAQueryFactory;
+import com.querydsl.jpa.impl.JPAUpdateClause;
 import java.util.List;
 import javax.persistence.EntityManager;
 import javax.persistence.PersistenceContext;
+import me.hjhng125.querydsl.config.QuerydslConfig;
 import me.hjhng125.querydsl.model.entity.Member;
 import me.hjhng125.querydsl.model.entity.QMember;
 import me.hjhng125.querydsl.model.entity.Team;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.jdbc.AutoConfigureTestDatabase;
 import org.springframework.boot.test.autoconfigure.jdbc.AutoConfigureTestDatabase.Replace;
 import org.springframework.boot.test.autoconfigure.orm.jpa.DataJpaTest;
+import org.springframework.context.annotation.Import;
+import org.springframework.test.annotation.Commit;
 
 @DataJpaTest
+@Import(QuerydslConfig.class)
 @AutoConfigureTestDatabase(replace = Replace.NONE)
 public class QuerydslBulkTest {
 
     @PersistenceContext
     EntityManager em;
 
-    JPAQueryFactory queryFactory;
+    @Autowired JPAQueryFactory queryFactory;
     QMember memberSub;
 
     @BeforeEach
     void before() {
-        queryFactory = new JPAQueryFactory(em);
         memberSub = new QMember("memberSub");
 
         Team teamA = new Team("teamA");
@@ -60,11 +65,16 @@ public class QuerydslBulkTest {
      * 따라서 영속성 컨텍스트와 DB의 상태가 달라져 버린다.
      */
     @Test
-    // @Commit // 강제 커밋을 위한 어노테이션
+    @Commit // 강제 커밋을 위한 어노테이션
     void bulk_update() {
         //given
 
         //when
+
+        /*
+         * JPQL은 쿼리 발생 전 선수작업으로 flush가 발생한다.
+         * 영속성 컨텍스트의 상태가 DB에 반영되기 전 JPQL이 실행되면 서로간의 일관성이 무너지기 때문이다.
+         */
         long count = queryFactory
             .update(member)
             .set(member.username, "비화원")
@@ -72,7 +82,6 @@ public class QuerydslBulkTest {
             .execute();
 
         /*
-         * JPQL은 바로 쿼리를 발생시키기 때문에 select 구문이 발생한다.
          * 가져온 데이터의 id를 확인해보니 이미 영속성 컨텍스트에 있다.
          * 그러면 DB에서 가져온 데이터를 버리고 영속성 컨텍스트의 엔터티를 반환한다.
          * 따라서 이렇게 가져온 값은 영속성 컨텍스트에서 가져온 값이기 때문에
@@ -84,12 +93,8 @@ public class QuerydslBulkTest {
          * 항상 bulk 연산을 진행하면 영속성 컨텍스트를 지워야 올바른 값을 얻을 수 있다.
          */
         em.flush();
-        em.clear();
+//        em.clear();
 
-        /*
-         * JPQL은 쿼리 발생 전 선수작업으로 flush가 발생한다.
-         * 영속성 컨텍스트의 상태가 DB에 반영되기 전 JPQL이 실행되면 서로간의 일관성이 무너지기 때문이다.
-         */
         List<Member> result = queryFactory
             .selectFrom(member)
             .fetch();
@@ -147,6 +152,46 @@ public class QuerydslBulkTest {
 
         //then
         assertThat(count).isEqualTo(3);
+
+    }
+
+    @Test
+    void jpql_test() {
+
+        List<Member> result = queryFactory
+            .selectFrom(member)
+            .fetch();
+
+        for (Member member1 : result) {
+            System.out.println("member1 = " + member1);
+        }
+
+        result.get(0).setUsername("test2");
+
+        queryFactory
+            .update(member)
+            .set(member.username, "test")
+            .where(member.id.eq(3L))
+            .execute();
+
+        List<Member> result2 = queryFactory
+            .selectFrom(member)
+            .fetch();
+
+        for (Member member2 : result2) {
+            System.out.println("member2 = " + member2);
+        }
+
+        em.flush();
+        em.clear();
+
+        List<Member> result3 = queryFactory
+            .selectFrom(member)
+            .fetch();
+
+        for (Member member3 : result3) {
+            System.out.println("member3 = " + member3);
+        }
 
     }
 }

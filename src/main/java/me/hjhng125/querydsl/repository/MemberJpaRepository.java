@@ -138,6 +138,10 @@ public class MemberJpaRepository {
         return hasText(teamName) ? team.name.eq(teamName) : null;
     }
 
+    private BooleanExpression betweenAge(Integer ageGoe, Integer ageLoe) {
+        return ageGoe(ageGoe).and(ageLoe(ageLoe));
+    }
+
     private BooleanExpression ageGoe(Integer ageGoe) {
         return ageGoe != null ? member.age.goe(ageGoe) : null;
     }
