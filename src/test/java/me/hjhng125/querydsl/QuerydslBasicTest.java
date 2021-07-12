@@ -11,6 +11,7 @@ import com.querydsl.core.types.ExpressionUtils;
 import com.querydsl.core.types.Projections;
 import com.querydsl.core.types.dsl.CaseBuilder;
 import com.querydsl.core.types.dsl.Expressions;
+import com.querydsl.core.types.dsl.NumberExpression;
 import com.querydsl.jpa.JPAExpressions;
 import com.querydsl.jpa.impl.JPAQueryFactory;
 import java.util.List;
@@ -18,6 +19,7 @@ import javax.persistence.EntityManager;
 import javax.persistence.EntityManagerFactory;
 import javax.persistence.PersistenceContext;
 import javax.persistence.PersistenceUnit;
+import me.hjhng125.querydsl.config.QuerydslConfig;
 import me.hjhng125.querydsl.model.dto.QMemberDto;
 import me.hjhng125.querydsl.model.entity.Member;
 import me.hjhng125.querydsl.model.dto.MemberDto;
@@ -27,8 +29,10 @@ import me.hjhng125.querydsl.model.dto.UserDto;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.test.autoconfigure.orm.jpa.DataJpaTest;
+import org.springframework.context.annotation.Import;
 
 @DataJpaTest
+@Import(QuerydslConfig.class)
 class QuerydslBasicTest {
 
     @PersistenceContext
@@ -536,6 +540,29 @@ class QuerydslBasicTest {
 
         //then
         result.forEach(System.out::println);
+
+    }
+
+    @Test
+    void case_orderBy() {
+        //given
+
+        //when
+        NumberExpression<Integer> ageCase = new CaseBuilder()
+            .when(member.age.between(0, 20)).then(0)
+            .when(member.age.between(21, 30)).then(1)
+            .otherwise(2);
+
+        List<Tuple> fetch = queryFactory
+            .select(member.username, member.age, ageCase)
+            .from(member)
+            .orderBy(ageCase.desc())
+            .fetch();
+
+        //then
+        for (Tuple tuple: fetch) {
+            System.out.println(tuple.get(member.username) + ", " + "");
+        }
 
     }
 
