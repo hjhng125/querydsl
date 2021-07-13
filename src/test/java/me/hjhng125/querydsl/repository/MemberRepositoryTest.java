@@ -163,4 +163,14 @@ class MemberRepositoryTest {
             .extracting("username")
             .containsExactly("member1", "member2", "member3", "member4");
     }
+
+    @Test
+    void teest() {
+        //given
+
+        //when
+        Optional<Member> byId = memberRepository.findById(322L);
+        //then
+
+    }
 }

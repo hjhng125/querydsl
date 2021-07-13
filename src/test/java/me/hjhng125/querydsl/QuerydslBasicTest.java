@@ -11,6 +11,7 @@ import com.querydsl.core.types.ExpressionUtils;
 import com.querydsl.core.types.Projections;
 import com.querydsl.core.types.dsl.CaseBuilder;
 import com.querydsl.core.types.dsl.Expressions;
+import com.querydsl.core.types.dsl.NumberExpression;
 import com.querydsl.jpa.JPAExpressions;
 import com.querydsl.jpa.impl.JPAQueryFactory;
 import java.util.List;
@@ -18,6 +19,7 @@ import javax.persistence.EntityManager;
 import javax.persistence.EntityManagerFactory;
 import javax.persistence.PersistenceContext;
 import javax.persistence.PersistenceUnit;
+import me.hjhng125.querydsl.config.QuerydslConfig;
 import me.hjhng125.querydsl.model.dto.QMemberDto;
 import me.hjhng125.querydsl.model.entity.Member;
 import me.hjhng125.querydsl.model.dto.MemberDto;
@@ -27,8 +29,10 @@ import me.hjhng125.querydsl.model.dto.UserDto;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.test.autoconfigure.orm.jpa.DataJpaTest;
+import org.springframework.context.annotation.Import;
 
 @DataJpaTest
+@Import(QuerydslConfig.class)
 class QuerydslBasicTest {
 
     @PersistenceContext
@@ -411,6 +415,43 @@ class QuerydslBasicTest {
 
     }
 
+    @Test
+    void fetchJoinByTeam() {
+        //given
+
+        //when
+        List<Team> result = queryFactory.selectFrom(team)
+            .join(team.members, member).fetchJoin()
+            .fetch();
+
+        //then
+        for (Team team : result) {
+            System.out.println("team = " + team);
+            for (Member member : team.getMembers()) {
+                System.out.println("member = " + member);
+            }
+        }
+    }
+
+    @Test
+    void fetchJoinByTeamDistinct() {
+        //given
+
+        //when
+        List<Team> result = queryFactory
+            .selectFrom(team).distinct()
+            .join(team.members, member).fetchJoin()
+            .fetch();
+
+        //then
+        for (Team team : result) {
+            System.out.println("team = " + team);
+            for (Member member : team.getMembers()) {
+                System.out.println("member = " + member);
+            }
+        }
+    }
+
     /**
      * SubQuery
      * com.querydsl.jpa.JPAExpressions 사용
@@ -536,6 +577,29 @@ class QuerydslBasicTest {
 
         //then
         result.forEach(System.out::println);
+
+    }
+
+    @Test
+    void case_orderBy() {
+        //given
+
+        //when
+        NumberExpression<Integer> ageCase = new CaseBuilder()
+            .when(member.age.between(0, 20)).then(0)
+            .when(member.age.between(21, 30)).then(1)
+            .otherwise(2);
+
+        List<Tuple> fetch = queryFactory
+            .select(member.username, member.age, ageCase)
+            .from(member)
+            .orderBy(ageCase.desc())
+            .fetch();
+
+        //then
+        for (Tuple tuple : fetch) {
+            System.out.println(tuple.get(member.username) + ", " + "");
+        }
 
     }
 
@@ -704,7 +768,8 @@ class QuerydslBasicTest {
                 ExpressionUtils.as(
                     JPAExpressions
                         .select(memberSub.age.max())
-                        .from(memberSub), "age") // field 주입을 해야하는데 서브쿼리를 쓰고 싶은 경우 ExpressionUtils를 사용해야 한다. 서브쿼리는 field이름과 안맞으니깐 그 자체를 alias한다고 생각하자. 서브쿼리가 아닌 단순 필드도 할 수 있으나 그냥 as가 간편함.
+                        .from(memberSub), "age")
+                // field 주입을 해야하는데 서브쿼리를 쓰고 싶은 경우 ExpressionUtils를 사용해야 한다. 서브쿼리는 field이름과 안맞으니깐 그 자체를 alias한다고 생각하자. 서브쿼리가 아닌 단순 필드도 할 수 있으나 그냥 as가 간편함.
             ))
             .from(member)
             .fetch();
@@ -749,23 +814,14 @@ class QuerydslBasicTest {
     }
 
     /**
-     * Q-Type Dto를 new 연산자를 통해(생성자 그대로) 주입받을 수 있기 때문에
-     * IDE의 도움을 받아 훨씬 안정적으로 값을 받을 수 있다.
-     * 만약 타입이 안맞을 경우 컴파일 시점에 오류를 잡을 수 있다.
-     *
-     * Projections.constructor 방식은 타입이 다르거나,
-     * dto에 선언되지 않은 타입을 추가로 넣었을 때 컴파일 시점에 오류를 잡지 못하고,
-     * 런타임 시점에 잡는다는 단점이 있다.
-     *
-     * 하지만 Q-Type을 무조건 선언해야하며,
-     * DTO 자체가 querydsl에 심히 의존하게 된다는 단점이 생긴다.
-     * 따라서 querydsl에서 다른 기술로 대체하게 되면 DTO에 문제가 된다.
-     * DTO는 service, controller 계층, 혹은 API를 통해 외부로 나가는 등
-     * 여러 계층에서 사용하는데 모든 곳에 영향이 생긴다.
-     * DTO 자체가 순수성을 잃는다.
-     *
+     * Q-Type Dto를 new 연산자를 통해(생성자 그대로) 주입받을 수 있기 때문에 IDE의 도움을 받아 훨씬 안정적으로 값을 받을 수 있다. 만약 타입이 안맞을 경우 컴파일 시점에 오류를 잡을 수 있다.
+     * <p>
+     * Projections.constructor 방식은 타입이 다르거나, dto에 선언되지 않은 타입을 추가로 넣었을 때 컴파일 시점에 오류를 잡지 못하고, 런타임 시점에 잡는다는 단점이 있다.
+     * <p>
+     * 하지만 Q-Type을 무조건 선언해야하며, DTO 자체가 querydsl에 심히 의존하게 된다는 단점이 생긴다. 따라서 querydsl에서 다른 기술로 대체하게 되면 DTO에 문제가 된다. DTO는 service, controller 계층, 혹은 API를 통해 외부로 나가는 등 여러 계층에서 사용하는데 모든
+     * 곳에 영향이 생긴다. DTO 자체가 순수성을 잃는다.
+     * <p>
      * 따라서 DTO가 순수하길 원한다면 이 방법은 고려되어야 한다.
-     *
      */
     @Test
     void fetch_by_queryProjection() {

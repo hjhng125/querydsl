@@ -10,11 +10,12 @@ import javax.persistence.ManyToOne;
 import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
+import lombok.Setter;
 import lombok.ToString;
 
 @Entity
 @Getter
-
+@Setter
 /**
  *  ToString()에 team과 같은 연관관계가 들어가면 안된다.
  *  그렇게 되면 ToString()이 호출될때 team의 객체로 갔다가
