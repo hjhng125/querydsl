@@ -114,40 +114,6 @@ public class MemberRepositoryCustomImpl extends QuerydslRepositorySupport implem
     }
 
     /**
-     * QuerydslRepositorySupport를 사용하면 JPAQueryFactory와 다르게 from()으로 시작한다.<br/>
-     * 또한 getQuerydsl()이라는 메소드를 제공하는데, 이는 spring data jpa가 제공하는 Querydsl라는 헬퍼 클래스를 반환한다.<br/>
-     * Querydsl 객체는 applyPagination() 메소드를 제공하는데 이는 Pageable을 인자로 받아 내부에서 페이징한다.<br/>
-     * 위에서 메소드 체인으로 적용했던 offset(), limit() 코드가 줄어드는 장점이 있다.<br/>
-     * 하지만 Sort는 적용할 시 오류가 발생한다.<br/>
-     * 또한 from()으로 시작하기에 JPAQueryFactory 보다 명시적이지 않다. <br/>
-     */
-    @Override
-    public Page<MemberTeamDTO> searchPageSimpleV2(MemberSearchCondition condition, Pageable pageable) {
-        JPQLQuery<MemberTeamDTO> query = from(member)
-            .leftJoin(member.team, team)
-            .where(
-                usernameEquals(condition.getUsername()),
-                teamNameEquals(condition.getTeamName()),
-                ageGoe(condition.getAgeGoe()),
-                ageLoe(condition.getAgeLoe())
-            )
-            .select(new QMemberTeamDTO(
-                member.id,
-                member.username,
-                member.age,
-                team.id,
-                team.name
-            ))
-            .offset(pageable.getOffset())
-            .limit(pageable.getPageSize());
-
-        JPQLQuery<MemberTeamDTO> memberTeamDTOJPQLQuery = Objects.requireNonNull(getQuerydsl()).applyPagination(pageable, query);
-
-        return new PageImpl<>(memberTeamDTOJPQLQuery.fetch(), pageable, memberTeamDTOJPQLQuery.fetchCount());
-
-    }
-
-    /**
      * 데이터의 내용과 전체 카운트를 별로도 조회하는 방법 <br/>
      * 쿼리 두개를 분리.<br/>
      * 카운트 쿼리는 더 간단한 쿼리로 만들어지는 경우가 있다.<br/>
@@ -205,7 +171,7 @@ public class MemberRepositoryCustomImpl extends QuerydslRepositorySupport implem
     /**
      * 때에 따라 카운트 쿼리를 생략할 수 있다.<br/>
      * 1. 시작 페이지면서 컨텐츠 사이즈가 페이지 사이즈보다 작을 때 <br/>
-     * 2. 마지막 페이지일 떄 (offset + 컨텐트 사이즈로 전체 사이즈를 구할)
+     * 2. 마지막 페이지일 때 (offset + 컨텐트 사이즈로 전체 사이즈를 구함)
      * <p/>
      * PageableExecutionUtils.getPage() 함수는<br/>
      * 마지막 인자로 카운트 쿼리 함수를 받는다.<br/>
@@ -234,6 +200,41 @@ public class MemberRepositoryCustomImpl extends QuerydslRepositorySupport implem
         JPAQuery<Member> countQuery = getTotalQuery(condition);
 
         return PageableExecutionUtils.getPage(contents, pageable, countQuery::fetchCount);
+    }
+
+
+    /**
+     * QuerydslRepositorySupport를 사용하면 JPAQueryFactory와 다르게 from()으로 시작한다.<br/>
+     * 또한 getQuerydsl()이라는 메소드를 제공하는데, 이는 spring data jpa가 제공하는 Querydsl라는 헬퍼 클래스를 반환한다.<br/>
+     * Querydsl 객체는 applyPagination() 메소드를 제공하는데 이는 Pageable을 인자로 받아 내부에서 페이징한다.<br/>
+     * 위에서 메소드 체인으로 적용했던 offset(), limit() 코드가 줄어드는 장점이 있다.<br/>
+     * 하지만 Sort는 적용할 시 오류가 발생한다.<br/>
+     * 또한 from()으로 시작하기에 JPAQueryFactory 보다 명시적이지 않다. <br/>
+     */
+    @Override
+    public Page<MemberTeamDTO> searchPageSimpleV2(MemberSearchCondition condition, Pageable pageable) {
+        JPQLQuery<MemberTeamDTO> query = from(member)
+            .leftJoin(member.team, team)
+            .where(
+                usernameEquals(condition.getUsername()),
+                teamNameEquals(condition.getTeamName()),
+                ageGoe(condition.getAgeGoe()),
+                ageLoe(condition.getAgeLoe())
+            )
+            .select(new QMemberTeamDTO(
+                member.id,
+                member.username,
+                member.age,
+                team.id,
+                team.name
+            ))
+            .offset(pageable.getOffset())
+            .limit(pageable.getPageSize());
+
+        JPQLQuery<MemberTeamDTO> memberTeamDTOJPQLQuery = Objects.requireNonNull(getQuerydsl()).applyPagination(pageable, query);
+
+        return new PageImpl<>(memberTeamDTOJPQLQuery.fetch(), pageable, memberTeamDTOJPQLQuery.fetchCount());
+
     }
 
 }

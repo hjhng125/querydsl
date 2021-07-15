@@ -53,8 +53,8 @@ class MemberRepositoryTest {
     @Test
     void repositoryTest() {
         //given
-        Member member1 = new Member("member1", 10);
-        Member save = memberRepository.save(member1);
+        Member member5 = new Member("member5", 10);
+        Member save = memberRepository.save(member5);
 
         //when
         Optional<Member> byId = memberRepository.findById(save.getId());
@@ -63,7 +63,7 @@ class MemberRepositoryTest {
 
         //then
         assertThat(byId.get().getId()).isEqualTo(save.getId());
-        assertThat(all.size()).isEqualTo(1);
+        assertThat(all.size()).isEqualTo(5);
         assertThat(byUsername)
             .extracting("username")
             .containsExactly("member1");
@@ -167,10 +167,30 @@ class MemberRepositoryTest {
     @Test
     void teest() {
         //given
+        em.flush();
+        em.clear();
 
         //when
-        Optional<Member> byId = memberRepository.findById(322L);
+        Member byId = memberRepository.findById(3L).get();
         //then
 
+        System.out.println("member = " + byId);
+        System.out.println("team = " + byId.getTeam());
+    }
+
+    @Test
+    void teest2() {
+        //given
+        em.flush();
+        em.clear();
+
+        //when
+        List<Member> byId = memberRepository.findAll();
+        //then
+
+        for (Member member1 : byId) {
+            System.out.println("member = " + member1);
+            System.out.println("team = " + member1.getTeam());
+        }
     }
 }
