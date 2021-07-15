@@ -31,6 +31,7 @@ class MemberJpaRepositoryTest {
     public void beforeEach() {
         memberJpaRepository = new MemberJpaRepository(em, queryFactory);
         test = new Member("member5", 50);
+        memberJpaRepository.save(test);;
         Team teamA = new Team("teamA");
         Team teamB = new Team("teamB");
 
