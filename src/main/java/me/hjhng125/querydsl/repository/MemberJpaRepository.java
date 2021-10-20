@@ -41,6 +41,11 @@ public class MemberJpaRepository {
             .getResultList();
     }
 
+    public List<Member> findMember() {
+        return em.createQuery("select m from Member m join fetch m.team t", Member.class)
+            .getResultList();
+    }
+
     public List<Member> findAllQuerydsl() {
         return jpaQueryFactory
             .selectFrom(member)

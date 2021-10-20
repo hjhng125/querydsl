@@ -30,11 +30,10 @@ class MemberJpaRepositoryTest {
     @BeforeEach
     public void beforeEach() {
         memberJpaRepository = new MemberJpaRepository(em, queryFactory);
-        test = new Member("member5", 50);
-        memberJpaRepository.save(test);;
         Team teamA = new Team("teamA");
         Team teamB = new Team("teamB");
-
+        test = new Member("member5", 50, teamA);
+        memberJpaRepository.save(test);
         em.persist(teamA);
         em.persist(teamB);
 
@@ -60,6 +59,13 @@ class MemberJpaRepositoryTest {
     void findAll() {
         List<Member> all = memberJpaRepository.findAll();
         assertThat(all).contains(test);
+    }
+
+    @Test
+    void findMember() {
+        List<Member> all = memberJpaRepository.findMember();
+        assertThat(all).contains(test);
+
     }
 
     @Test

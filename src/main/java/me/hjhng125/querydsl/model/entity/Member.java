@@ -46,7 +46,8 @@ public class Member {
     private String username;
     private int age;
 
-    @ManyToOne(fetch = FetchType.LAZY)
+//    @ManyToOne(fetch = FetchType.LAZY)
+    @ManyToOne
     @JoinColumn(name = "team_id") // 관계의 주인
     private Team team;
 
